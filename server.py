@@ -1,3 +1,9 @@
+"""
+AUTHORS: Antoine Andrieux & Thibaut Colson & Amine Djuric
+COURSE: LINGI2145 (INFO-Y118) Mobile and embedded computing
+DATE: 11/05/2021
+"""
+
 import sys
 import argparse
 import os
@@ -50,7 +56,8 @@ class Server:
         # print("received message:", data)
         # self.update_node(addr, data)
         # self.process_node(node)
-        self.send_data("bbbb::c30c:0:0:2", "off/red")
+        while True:
+            self.send_data("bbbb::c30c:0:0:2", "off/red")
 
 
 def main():

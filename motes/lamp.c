@@ -42,31 +42,13 @@ static void tcpip_handler(void) {
   if(uip_newdata()) {
 
     str = uip_appdata;
-    int array_length = uip_datalen();
-    str[array_length] = '\0';
-    int i;
-
-    for(i = 0; i < array_length; ++i) {
-        printf("%c ", str[i]);
-    }
-    
-    PRINTF("Lamp: DATA RECEPTION '%s'\n", str);
+    str[uip_datalen()] = '\0';
+    PRINTF("Lamp: DATA RECEPTION '%s'\n", str); // La réception + le print fonctionne
   }
 }
-/*---------------------------------------------------------------------------*/
-static void send_packet(void *ptr)
-{
-  static int seq_id;
-  char buf[MAX_PAYLOAD_LEN];
 
-  seq_id++;
-  //PRINTF("Lamp: DATA send to %d 'Hello %d'\n", client_conn->ripaddr.u8[15], seq_id);
-  //PRINTF("Lamp: DATA send to server \n");
-  sprintf(buf, "Hello %d from the client", seq_id);
-  uip_udp_packet_sendto(client_conn, buf, strlen(buf),
-                        &server_ipaddr, UIP_HTONS(UDP_SERVER_PORT));
-}
 /*---------------------------------------------------------------------------*/
+
 static void print_local_addresses(void)
 {
   int i;
@@ -103,7 +85,6 @@ static void set_global_address(void)
 PROCESS_THREAD(udp_client_process, ev, data)
 {
   static struct etimer periodic;
-  //static struct ctimer backoff_timer;
 
   PROCESS_BEGIN();
 
@@ -134,7 +115,6 @@ PROCESS_THREAD(udp_client_process, ev, data)
 
     if(etimer_expired(&periodic)) {
       etimer_reset(&periodic);
-      //ctimer_set(&backoff_timer, SEND_TIME, send_packet, NULL);
     }
   }
 
