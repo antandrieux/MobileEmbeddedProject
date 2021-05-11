@@ -33,12 +33,13 @@ class Server:
 
     def run(self):
         while True:
-            # data, addr = self.sock.recvfrom(1024)  # buffer size is 1024 bytes
+            #data, addr = self.sock.recvfrom(1024)  # buffer size is 1024 bytes
             # print("test")
             # if(re.match("^\d{1,2}/\d{1,2}$", data) is None):
             #     print("Wrong format")
-            # print("received message:", data)
-            self.send_data("bbbb::c30c:0:0:1", "off/red")
+            #print("received message:", data)
+            self.send_data("bbbb::c30c:0:0:2", "on/red")
+            #print("data send to lamp")
 
 
 def main():
