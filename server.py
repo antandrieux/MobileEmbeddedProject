@@ -6,11 +6,7 @@ import re
 from threading import Thread
 import socket
 
-SENSOR_OPEN = 7
-SENSOR_CLOSE = 8
-THRESHOLD = 65
-MAX_NBR_SENSOR_VALUES = 30
-VALVE_TIME = 600   # Unit -> seconds
+MAX_NBR_SENSOR_VALUES = 10
 
 UDP_IP = "bbbb::1"  # = 0.0.0.0 u IPv4
 UDP_SERVER_PORT = 5678
