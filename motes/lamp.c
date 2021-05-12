@@ -1,5 +1,5 @@
 /*
-* AUTHORS: Antoine Andrieux & Thibaut Colson & Amine 
+* AUTHORS: Antoine Andrieux & Thibaut Colson & Amine Djuric
 * COURSE: LINGI2145 (INFO-Y118) Mobile and embedded computing
 * DATE: 11/05/2021
 */
@@ -35,34 +35,21 @@ static uip_ipaddr_t server_ipaddr;
 PROCESS(udp_client_process, "UDP client process");
 AUTOSTART_PROCESSES(&udp_client_process);
 /*---------------------------------------------------------------------------*/
-static void
-tcpip_handler(void)
-{
-  char *str;
+static void tcpip_handler(void) {
+  
+  char* str;
 
   if(uip_newdata()) {
+
     str = uip_appdata;
     str[uip_datalen()] = '\0';
-    printf("DATA recv '%s'\n", str);
+    PRINTF("Lamp: DATA RECEPTION '%s'\n", str); // La réception + le print fonctionne
   }
 }
-/*---------------------------------------------------------------------------*/
-static void
-send_packet(void *ptr)
-{
-  static int seq_id;
-  char buf[MAX_PAYLOAD_LEN];
 
-  seq_id++;
-  PRINTF("DATA send to %d 'Hello %d'\n",
-         client_conn->ripaddr.u8[15], seq_id);
-  sprintf(buf, "Hello %d from the client", seq_id);
-  uip_udp_packet_sendto(client_conn, buf, strlen(buf),
-                        &server_ipaddr, UIP_HTONS(UDP_SERVER_PORT));
-}
 /*---------------------------------------------------------------------------*/
-static void
-print_local_addresses(void)
+
+static void print_local_addresses(void)
 {
   int i;
   uint8_t state;
@@ -76,14 +63,13 @@ print_local_addresses(void)
       PRINTF("\n");
       /* hack to make address "final" */
       if (state == ADDR_TENTATIVE) {
-	uip_ds6_if.addr_list[i].state = ADDR_PREFERRED;
+        uip_ds6_if.addr_list[i].state = ADDR_PREFERRED;
       }
     }
   }
 }
 /*---------------------------------------------------------------------------*/
-static void
-set_global_address(void)
+static void set_global_address(void)
 {
   uip_ipaddr_t ipaddr;
 
@@ -99,11 +85,10 @@ set_global_address(void)
 PROCESS_THREAD(udp_client_process, ev, data)
 {
   static struct etimer periodic;
-  static struct ctimer backoff_timer;
 
   PROCESS_BEGIN();
 
-  PROCESS_PAUSE();
+  PROCESS_PAUSE();  
 
   set_global_address();
 
@@ -117,19 +102,19 @@ PROCESS_THREAD(udp_client_process, ev, data)
 
   PRINTF("Created a connection with the server ");
   PRINT6ADDR(&client_conn->ripaddr);
-  PRINTF(" local/remote port %u/%u\n",
-	UIP_HTONS(client_conn->lport), UIP_HTONS(client_conn->rport));
+  PRINTF(" local/remote port %u/%u\n", UIP_HTONS(client_conn->lport), UIP_HTONS(client_conn->rport));
 
   etimer_set(&periodic, SEND_INTERVAL);
+  
   while(1) {
-    PROCESS_YIELD();
+  	PROCESS_YIELD();
+    
     if(ev == tcpip_event) {
       tcpip_handler();
     }
 
     if(etimer_expired(&periodic)) {
       etimer_reset(&periodic);
-      ctimer_set(&backoff_timer, SEND_TIME, send_packet, NULL);
     }
   }
 
