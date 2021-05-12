@@ -57,7 +57,8 @@ class Server:
         # self.update_node(addr, data)
         # self.process_node(node)
         while True:
-            self.send_data("bbbb::c30c:0:0:2", "off/red")
+            self.send_data("bbbb::c30c:0:0:2", "red/on")
+            # red|green|blue +  on|off
 
 
 def main():

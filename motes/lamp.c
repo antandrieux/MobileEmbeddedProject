@@ -36,14 +36,31 @@ PROCESS(udp_client_process, "UDP client process");
 AUTOSTART_PROCESSES(&udp_client_process);
 /*---------------------------------------------------------------------------*/
 static void tcpip_handler(void) {
-  
+
   char* str;
 
   if(uip_newdata()) {
 
     str = uip_appdata;
     str[uip_datalen()] = '\0';
-    PRINTF("Lamp: DATA RECEPTION '%s'\n", str); // La réception + le print fonctionne
+    //PRINTF("Lamp: DATA RECEPTION '%s'\n", str); // La réception + le print fonctionne
+    
+    char tmp[uip_datalen()];
+
+    int i;
+    for(i = 0; i < 7; ++i) {
+        tmp[i] = str[i];
+    }
+
+    char* led_color;
+    char* command;
+    char* delimiter = "/";
+
+    led_color = strtok(tmp, delimiter);
+    command = strtok(NULL, delimiter);
+
+    PRINTF("Lamp color: %s \n", led_color);
+    PRINTF("Lamp command: %s \n", command);
   }
 }
 
