@@ -73,7 +73,7 @@ static void tcpip_handler(void) {
       }
     }
 
-    else if(strcmp(led_color, "green") == 0) { 
+    if(strcmp(led_color, "green") == 0) { 
       if(strcmp(command,"on") == 0){
         leds_toggle(LEDS_GREEN);
       } 
@@ -82,7 +82,7 @@ static void tcpip_handler(void) {
       }
     }
 
-    else if(strcmp(led_color, "red") == 0) {    
+    if(strcmp(led_color, "red") == 0) {    
       if(strcmp(command,"on") == 0){
         leds_toggle(LEDS_RED);
       } 
