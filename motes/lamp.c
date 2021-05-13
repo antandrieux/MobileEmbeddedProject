@@ -11,6 +11,8 @@
 #include "net/ipv6/uip-ds6.h"
 #include "net/ipv6/uip-udp-packet.h"
 #include "sys/ctimer.h"
+#include "dev/leds.h"
+
 
 #include <stdio.h>
 #include <string.h>
@@ -23,10 +25,10 @@
 #define DEBUG DEBUG_PRINT
 #include "net/ipv6/uip-debug.h"
 
-#define START_INTERVAL		(15 * CLOCK_SECOND)
-#define SEND_INTERVAL		(60 * CLOCK_SECOND)
-#define SEND_TIME		(random_rand() % (SEND_INTERVAL))
-#define MAX_PAYLOAD_LEN		30
+#define START_INTERVAL    (15 * CLOCK_SECOND)
+#define SEND_INTERVAL   (60 * CLOCK_SECOND)
+#define SEND_TIME   (random_rand() % (SEND_INTERVAL))
+#define MAX_PAYLOAD_LEN   30
 
 static struct uip_udp_conn *client_conn;
 static uip_ipaddr_t server_ipaddr;
@@ -39,6 +41,8 @@ static void tcpip_handler(void) {
 
   char* str;
 
+  PRINTF("TEST TEST TEST");
+
   if(uip_newdata()) {
 
     str = uip_appdata;
@@ -48,9 +52,7 @@ static void tcpip_handler(void) {
     char tmp[uip_datalen()];
 
     int i;
-    for(i = 0; i < 7; ++i) {
-        tmp[i] = str[i];
-    }
+    for(i = 0; i < 7; ++i) {tmp[i] = str[i];}
 
     char* led_color;
     char* command;
@@ -61,13 +63,48 @@ static void tcpip_handler(void) {
 
     PRINTF("Lamp color: %s \n", led_color);
     PRINTF("Lamp command: %s \n", command);
+
+    /*
+    if(strcmp(led_color, "red") == 0) { // check if they are the same
+      
+      if(strcmp(command,"on") == 0){
+        
+        leds_on(LEDS_ALL);
+      } 
+
+      else {
+          leds_off(LEDS_ALL);
+      }
+    }
+
+    
+    if(strcmp(led_color, "red") == 0) { // check if they are the same
+      if(strcmp(command,"on") == 0){
+        leds_single_on(LEDS_LED1);
+      }
+      
+      else {
+        leds_single_off(LEDS_LED1);
+      }
+    }
+    */
+
   }
 }
 
 /*---------------------------------------------------------------------------*/
 
-static void print_local_addresses(void)
-{
+static void send_packet(void *ptr) {
+  
+  char buf[MAX_PAYLOAD_LEN];  
+  sprintf(buf, "Hi server, i'm a lamp");
+  uip_udp_packet_sendto(client_conn, buf, strlen(buf), &server_ipaddr, UIP_HTONS(UDP_SERVER_PORT));
+
+}
+
+
+/*---------------------------------------------------------------------------*/
+static void print_local_addresses(void) {
   int i;
   uint8_t state;
 
@@ -86,8 +123,7 @@ static void print_local_addresses(void)
   }
 }
 /*---------------------------------------------------------------------------*/
-static void set_global_address(void)
-{
+static void set_global_address(void) {
   uip_ipaddr_t ipaddr;
 
   uip_ip6addr(&ipaddr, 0xbbbb, 0, 0, 0, 0, 0, 0, 1);
@@ -99,9 +135,10 @@ static void set_global_address(void)
 
 }
 /*---------------------------------------------------------------------------*/
-PROCESS_THREAD(udp_client_process, ev, data)
-{
+PROCESS_THREAD(udp_client_process, ev, data) {
+
   static struct etimer periodic;
+  static struct ctimer backoff_timer;
 
   PROCESS_BEGIN();
 
@@ -124,7 +161,7 @@ PROCESS_THREAD(udp_client_process, ev, data)
   etimer_set(&periodic, SEND_INTERVAL);
   
   while(1) {
-  	PROCESS_YIELD();
+    PROCESS_YIELD();
     
     if(ev == tcpip_event) {
       tcpip_handler();
@@ -132,6 +169,7 @@ PROCESS_THREAD(udp_client_process, ev, data)
 
     if(etimer_expired(&periodic)) {
       etimer_reset(&periodic);
+      ctimer_set(&backoff_timer, SEND_TIME, send_packet, NULL);
     }
   }
 
