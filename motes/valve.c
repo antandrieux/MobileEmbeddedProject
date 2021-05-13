@@ -51,7 +51,7 @@ static void tcpip_handler(void) {
 
     command = strtok(NULL, delimiter);
 
-    PRINTF("Valve : %s \n", command);
+    PRINTF("Valve state: %s \n", command);
 
     // valve/bbbb::c30c:0:0:2/on
       
