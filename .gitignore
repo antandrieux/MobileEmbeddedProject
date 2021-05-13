@@ -1,7 +1,7 @@
-server-2.py
-
 motes/build
 motes/*.z1
 
 border/build
 border/*.z1
+
+.vscode

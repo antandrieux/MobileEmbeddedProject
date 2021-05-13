@@ -41,8 +41,6 @@ static void tcpip_handler(void) {
 
   char* str;
 
-  PRINTF("TEST TEST TEST");
-
   if(uip_newdata()) {
 
     str = uip_appdata;

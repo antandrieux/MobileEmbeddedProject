@@ -1,5 +1,5 @@
 /*
-* AUTHORS: Antoine Andrieux & Thibaut Colson & Amine 
+* AUTHORS: Antoine Andrieux & Thibaut Colson & Amine Djuric
 * COURSE: LINGI2145 (INFO-Y118) Mobile and embedded computing
 * DATE: 11/05/2021
 */
