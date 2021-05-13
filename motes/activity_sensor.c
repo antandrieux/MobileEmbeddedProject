@@ -59,7 +59,7 @@ send_packet(void *ptr)
     int16_t act;
     char type[] = "ACTIVITY_DATA";
 
-    if (randomSensorData){
+    if (RANDOM_SENSOR_DATA){
         act = random_rand() % 2;
         PRINTF("%d\n", act);
         sprintf(buf, "%s,%d", type, act);
