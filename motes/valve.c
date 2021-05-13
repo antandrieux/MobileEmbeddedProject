@@ -45,27 +45,19 @@ static void tcpip_handler(void) {
 
     str = uip_appdata;
     str[uip_datalen()] = '\0';
-    //PRINTF("Valve: DATA RECEPTION '%s'\n", str); // La réception + le print fonctionne
-    
     char tmp[uip_datalen()];
-
-    int i;
-    for(i = 0; i < uip_datalen(); ++i) {tmp[i] = str[i];}
-
     char* command;
     char* delimiter = "/";
 
     command = strtok(NULL, delimiter);
 
-    PRINTF("Valve color: %s \n", command);
+    PRINTF("Valve : %s \n", command);
 
     // valve/bbbb::c30c:0:0:2/on
       
-    if(strcmp(command,"on") == 0){//Led red to simulate the valve
+    if(strcmp(command, "on") == 0){ // Led red to simulate the valve
         leds_toggle(LEDS_RED);
-        PRINTF("valeur: %i \n", LEDS_RED);
       } 
-
       else {
         leds_off(LEDS_RED);
       }
