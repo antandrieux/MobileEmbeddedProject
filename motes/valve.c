@@ -70,7 +70,7 @@ static void tcpip_handler(void) {
 static void send_packet(void *ptr) {
   
   char buf[MAX_PAYLOAD_LEN];  
-  sprintf(buf, "Hi server, i'm a valve");
+  sprintf(buf, "VALVE_DATA,1");
   uip_udp_packet_sendto(client_conn, buf, strlen(buf), &server_ipaddr, UIP_HTONS(UDP_SERVER_PORT));
 
 }
