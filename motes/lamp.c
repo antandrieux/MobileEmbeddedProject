@@ -40,7 +40,7 @@ AUTOSTART_PROCESSES(&udp_client_process);
 static void tcpip_handler(void) {
 
   char* str;
-
+  
   if(uip_newdata()) {
 
     str = uip_appdata;
@@ -50,7 +50,7 @@ static void tcpip_handler(void) {
     char tmp[uip_datalen()];
 
     int i;
-    for(i = 0; i < 7; ++i) {tmp[i] = str[i];}
+    for(i = 0; i < uip_datalen(); ++i) {tmp[i] = str[i];}
 
     char* led_color;
     char* command;
@@ -62,31 +62,44 @@ static void tcpip_handler(void) {
     PRINTF("Lamp color: %s \n", led_color);
     PRINTF("Lamp command: %s \n", command);
 
-    /*
-    if(strcmp(led_color, "red") == 0) { // check if they are the same
+    // led/bbbb::c30c:0:0:2/red/on 
+    // led/bbbb::c30c:0:0:2/green/on 
+    // led/bbbb::c30c:0:0:2/blue/on 
+
+
+    if(strcmp(led_color, "blue") == 0) { // check if they are the same
       
       if(strcmp(command,"on") == 0){
-        
-        leds_on(LEDS_ALL);
+        leds_toggle(LEDS_YELLOW);
       } 
 
       else {
-          leds_off(LEDS_ALL);
+        leds_off(LEDS_YELLOW);
       }
     }
 
-    
-    if(strcmp(led_color, "red") == 0) { // check if they are the same
-      if(strcmp(command,"on") == 0){
-        leds_single_on(LEDS_LED1);
-      }
+    else if(strcmp(led_color, "green") == 0) { 
       
+      if(strcmp(command,"on") == 0){
+        leds_toggle(LEDS_GREEN);
+      } 
+
       else {
-        leds_single_off(LEDS_LED1);
+        leds_off(LEDS_GREEN);
       }
     }
-    */
 
+    else if(strcmp(led_color, "red") == 0) { 
+      
+      if(strcmp(command,"on") == 0){
+        leds_toggle(LEDS_RED);
+        PRINTF("valeur: %i \n", LEDS_RED);
+      } 
+
+      else {
+        leds_off(LEDS_RED);
+      }
+    }
   }
 }
 
@@ -100,8 +113,8 @@ static void send_packet(void *ptr) {
 
 }
 
-
 /*---------------------------------------------------------------------------*/
+
 static void print_local_addresses(void) {
   int i;
   uint8_t state;
@@ -157,6 +170,7 @@ PROCESS_THREAD(udp_client_process, ev, data) {
   PRINTF(" local/remote port %u/%u\n", UIP_HTONS(client_conn->lport), UIP_HTONS(client_conn->rport));
 
   etimer_set(&periodic, SEND_INTERVAL);
+  leds_off(LEDS_ALL);
   
   while(1) {
     PROCESS_YIELD();
