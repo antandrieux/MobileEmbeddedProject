@@ -30,11 +30,11 @@
 #define SEND_INTERVAL		(60 * CLOCK_SECOND)
 #define SEND_TIME		(random_rand() % (SEND_INTERVAL))
 #define MAX_PAYLOAD_LEN		30
+#define RANDOM_SENSOR_DATA	1  // 0 if real hardware, 1 if random value
 
 
 static struct uip_udp_conn *client_conn;
 static uip_ipaddr_t server_ipaddr;
-static int randomSensorData = 1; //0 if real hardware, 1 if random value
 
 /*---------------------------------------------------------------------------*/
 PROCESS(udp_client_process, "UDP client process");
@@ -58,13 +58,14 @@ send_packet(void *ptr)
   char buf[MAX_PAYLOAD_LEN];
     int16_t act;
     char type[] = "ACTIVITY_DATA";
+
     if (randomSensorData){
         act = random_rand() % 2;
         PRINTF("%d\n", act);
         sprintf(buf, "%s,%d", type, act);
     }
     else{
-        printf("hardware not yet implemented");
+        printf("Hardware not yet implemented");
     }
   
   uip_udp_packet_sendto(client_conn, buf, strlen(buf),

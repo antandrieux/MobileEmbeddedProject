@@ -30,11 +30,11 @@
 #define SEND_INTERVAL		(60 * CLOCK_SECOND)
 #define SEND_TIME		(random_rand() % (SEND_INTERVAL))
 #define MAX_PAYLOAD_LEN		30
+#define RANDOM_SENSOR_DATA	1  // 0 if real hardware, 1 if random value
 
 
 static struct uip_udp_conn *client_conn;
 static uip_ipaddr_t server_ipaddr;
-static int randomSensorData = 1; //0 if real hardware, 1 if random value
 
 /*---------------------------------------------------------------------------*/
 PROCESS(udp_client_process, "UDP client process");
@@ -55,24 +55,21 @@ tcpip_handler(void)
 static void
 send_packet(void *ptr)
 {
-  static int seq_id;
   char buf[MAX_PAYLOAD_LEN];
-    int16_t temp;
-    char type[] = "TEMPERATURE_DATA";
-    if (randomSensorData){
-        temp = random_rand() % 100;
-        PRINTF("%d\n", temp);
-        sprintf(buf, "%s,%d", type, temp);
-    }
-    else{
-        tmp102_init();
-        seq_id++;
-        PRINTF("DATA send to %d 'Hello %d'\n",
-            client_conn->ripaddr.u8[15], seq_id);
-        temp = tmp102_read_temp_raw(); 
-        PRINTF("%d\n", temp);
-        sprintf(buf, "%s,%d", type, temp);
-    }
+  int16_t temp;
+  char type[] = "TEMPERATURE_DATA";
+
+  if (RANDOM_SENSOR_DATA){
+      temp = random_rand() % 100;
+      PRINTF("%d\n", temp);
+      sprintf(buf, "%s,%d", type, temp);
+  }
+  else{
+      tmp102_init();
+      temp = tmp102_read_temp_raw(); 
+      PRINTF("%d\n", temp);
+      sprintf(buf, "%s,%d", type, temp);
+  }
   
   uip_udp_packet_sendto(client_conn, buf, strlen(buf),
                         &server_ipaddr, UIP_HTONS(UDP_SERVER_PORT));

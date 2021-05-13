@@ -44,9 +44,7 @@ static void tcpip_handler(void) {
   if(uip_newdata()) {
 
     str = uip_appdata;
-    str[uip_datalen()] = '\0';
-    //PRINTF("Lamp: DATA RECEPTION '%s'\n", str); // La réception + le print fonctionne
-    
+    str[uip_datalen()] = '\0';    
     char tmp[uip_datalen()];
 
     int i;
@@ -59,8 +57,7 @@ static void tcpip_handler(void) {
     led_color = strtok(tmp, delimiter);
     command = strtok(NULL, delimiter);
 
-    PRINTF("Lamp color: %s \n", led_color);
-    PRINTF("Lamp command: %s \n", command);
+    PRINTF("Lamp : %s/%s\n", led_color, command);
 
     // led/bbbb::c30c:0:0:2/red/on 
     // led/bbbb::c30c:0:0:2/green/on 
@@ -68,34 +65,27 @@ static void tcpip_handler(void) {
 
 
     if(strcmp(led_color, "blue") == 0) { // check if they are the same
-      
       if(strcmp(command,"on") == 0){
         leds_toggle(LEDS_YELLOW);
       } 
-
       else {
         leds_off(LEDS_YELLOW);
       }
     }
 
     else if(strcmp(led_color, "green") == 0) { 
-      
       if(strcmp(command,"on") == 0){
         leds_toggle(LEDS_GREEN);
       } 
-
       else {
         leds_off(LEDS_GREEN);
       }
     }
 
-    else if(strcmp(led_color, "red") == 0) { 
-      
+    else if(strcmp(led_color, "red") == 0) {    
       if(strcmp(command,"on") == 0){
         leds_toggle(LEDS_RED);
-        PRINTF("valeur: %i \n", LEDS_RED);
       } 
-
       else {
         leds_off(LEDS_RED);
       }

@@ -57,11 +57,9 @@ static void tcpip_handler(void) {
 
     // valve/bbbb::c30c:0:0:2/on
       
-    if(strcmp(command,"on") == 0){//Led red to simulate the valve
+    if(strcmp(command, "on") == 0){ // Led red to simulate the valve
         leds_toggle(LEDS_RED);
-        PRINTF("valeur: %i \n", LEDS_RED);
       } 
-
       else {
         leds_off(LEDS_RED);
       }
