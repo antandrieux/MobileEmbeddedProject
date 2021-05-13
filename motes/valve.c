@@ -47,10 +47,6 @@ static void tcpip_handler(void) {
     str[uip_datalen()] = '\0';
     //PRINTF("Valve: DATA RECEPTION '%s'\n", str); // La réception + le print fonctionne
     
-    char tmp[uip_datalen()];
-
-    int i;
-    for(i = 0; i < uip_datalen(); ++i) {tmp[i] = str[i];}
 
     char* command;
     char* delimiter = "/";
