@@ -214,7 +214,7 @@ class Server:
                     mote_src_ip_addr, '<sensor_ip_address>')
                 # Inputs validation
                 if not re.match(REGEX_IPV6, mote_src_ip_addr) or not valve_state.isdigit() \
-                        or (valve_state.isdigit() and not (int(valve_state) <= 100 and int(valve_state) >= 0)):
+                        or (valve_state.isdigit() and not (int(valve_state) < 100 and int(valve_state) >= 0)):
                     command = ""
             except AttributeError:
                 None
