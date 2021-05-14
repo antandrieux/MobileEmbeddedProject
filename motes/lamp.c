@@ -57,55 +57,56 @@ static void tcpip_handler(void) {
     str = uip_appdata;
     str[uip_datalen()] = '\0';
 
-    PRINTF("STR: %s \n", str);
-
     char led_color = str[0];
     char command = str[2];
 
-    PRINTF("######### Lamp color: %c \n", led_color);
-    PRINTF("######### Lamp command: %c \n", command);
+    char* color_var = "";
+    char* command_var = "";
 
     if(led_color == '3') {  // checks if the led is blue
-      PRINTF("Lamp color: blue \n");
+      color_var = "blue";
 
       if(command == '1'){
-        PRINTF("Command : on \n");
+        command_var = "on";
         leds_on(LEDS_YELLOW);
       } 
 
       else {
-        PRINTF("Command : off \n");
+        command_var = "off";
         leds_off(LEDS_YELLOW);
       }
     }
 
     else if (led_color == '2' ) { // checks if the led is green
-      PRINTF("Lamp color: green \n");
+      color_var = "green";
 
       if(command == '1'){
-        PRINTF("Command : on \n");
+        command_var = "on";
         leds_on(LEDS_GREEN);
       } 
 
       else {
-        PRINTF("Command : off \n");
+        command_var = "off";
         leds_off(LEDS_GREEN);
       }
     }
 
     else if (led_color == '1' ) { // checks if the led is red
-      PRINTF("Lamp color: red \n");
+      color_var = "red";
 
       if(command == '1'){
-        PRINTF("Command : on \n");
+        command_var = "on";
         leds_on(LEDS_RED);
       } 
 
       else {
-        PRINTF("Command : off \n");
+        command_var = "off";
         leds_off(LEDS_RED);
       }
     }
+
+    PRINTF("Lamp color: %s \n", color_var);
+    PRINTF("Command : %s \n", command_var);
     
   }
 }
