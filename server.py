@@ -13,7 +13,7 @@ import uuid
 import time
 
 
-UDP_IP = "bbbb::1"  # = 0.0.0.0 u IPv4
+UDP_IP = "bbbb::1"
 UDP_SERVER_PORT = 5678
 UDP_CLIENT_PORT = 8765
 
@@ -28,7 +28,7 @@ OFF = "0"
 
 BUFFER_SIZE = 1024
 KEEP_ALIVE_MSG = "KEEP_ALIVE"
-KEEP_ALIVE_TIMEOUT = 120
+KEEP_ALIVE_TIMEOUT = 240
 
 REGEX_IPV6 = "(([0-9a-fA-F]{1,4}:){7,7}[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,7}:|([0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,5}(:[0-9a-fA-F]{1,4}){1,2}|([0-9a-fA-F]{1,4}:){1,4}(:[0-9a-fA-F]{1,4}){1,3}|([0-9a-fA-F]{1,4}:){1,3}(:[0-9a-fA-F]{1,4}){1,4}|([0-9a-fA-F]{1,4}:){1,2}(:[0-9a-fA-F]{1,4}){1,5}|[0-9a-fA-F]{1,4}:((:[0-9a-fA-F]{1,4}){1,6})|:((:[0-9a-fA-F]{1,4}){1,7}|:)|fe80:(:[0-9a-fA-F]{0,4}){0,4}%[0-9a-zA-Z]{1,}|::(ffff(:0{1,4}){0,1}:){0,1}((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])|([0-9a-fA-F]{1,4}:){1,4}:((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9]))"
 COMMAND_INSTRUCTIONS = \
@@ -77,7 +77,7 @@ class Server:
         self.sock.bind((UDP_IP, UDP_SERVER_PORT))
 
     def send_data(self, address, data):
-        """ Request sending to the mote through the border router """
+        """ Request sent to the mote through the border router """
         self.sock.sendto(data.encode(), (address, UDP_CLIENT_PORT))
 
     def update_node(self, addr, value):
@@ -112,6 +112,7 @@ class Server:
             None
 
     def send_automation(self, mote_src_ip_addr, mote_dest_ip_addr, type, command, command_to_display):
+        """ Request sent to the mote because of a configured automation """
         self.sock.sendto(command.encode(
         ), (mote_dest_ip_addr, UDP_CLIENT_PORT))
         if verbose:
@@ -119,6 +120,7 @@ class Server:
                   command_to_display + " (stop verbose? stop)")
 
     def check_and_automate(self, mote_src_ip_addr, data):
+        """ Check and execute automation for this mote """
         if mote_src_ip_addr in self.automations:
             # run all automations for this source mote
             for automation in self.automations[mote_src_ip_addr]:
@@ -129,10 +131,12 @@ class Server:
                     if automation["type"] == "Activity to led":
                         if data == ON:
                             self.send_automation(
-                                mote_src_ip_addr, automation["mote_dest_ip_addr"], automation["type"], LED_COLORS[automation["value"]] + "/" + ON,  automation["value"] + "/on")
+                                mote_src_ip_addr, automation["mote_dest_ip_addr"], automation["type"],
+                                LED_COLORS[automation["value"]] + "/" + ON, automation["value"] + "/on")
                         elif data == OFF:
                             self.send_automation(
-                                mote_src_ip_addr, automation["mote_dest_ip_addr"], automation["type"], LED_COLORS[automation["value"]] + "/" + OFF,  automation["value"] + "/off")
+                                mote_src_ip_addr, automation["mote_dest_ip_addr"], automation["type"],
+                                LED_COLORS[automation["value"]] + "/" + OFF, automation["value"] + "/off")
 
                     # if the sensor gets a temperature bellow than the wanted temperature => activate the thermostatic  valve
                     elif automation["type"] == "Temperature to valve":
@@ -146,6 +150,7 @@ class Server:
                             mote_src_ip_addr, automation["mote_dest_ip_addr"], automation["type"], command, command_to_display)
 
     def receive_data(self):
+        """ Thread to receive data from the motes """
         print("Server listening on port " + str(UDP_SERVER_PORT) + "...\n")
 
         while True:
@@ -155,6 +160,7 @@ class Server:
             self.update_node(addr[0], data)
 
     def extract_fields_from_command(self, command, mote_src_ip_addr, mote_dest_ip_addr, led_color, led_state, valve_state, automation_ID):
+        """ Extract attributes and fields from the user's command """
         try:
             # Led control
             mote_dest_ip_addr = re.search('led/(.+?)/', command).group(1)
@@ -221,13 +227,16 @@ class Server:
         return command, mote_src_ip_addr, mote_dest_ip_addr, led_color, led_state, valve_state, automation_ID
 
     def cmd_print_help(self):
+        """ Display the command instructions """
         print(COMMAND_INSTRUCTIONS)
 
     def cmd_toogle_verbose(self, bool):
+        """ Display/hide server logs """
         global verbose
         verbose = bool
 
     def cmd_show_motes(self):
+        """ Display motes connected to the server """
         if len(self.nodes) == 0:
             print(
                 "No motes connected... Wait until a message data comes from a mote and try again.")
@@ -236,8 +245,10 @@ class Server:
                 "%b %d %Y %H:%M:%S %Z", time.gmtime(self.nodes[n]["last_connection"])) + ")")
 
     def cmd_show_automations(self):
-        if len(self.nodes) == 0:
-            print("No automation configured... To create a new one, type \"automate sensor_temperature/<sensor_ip_address>/valve/<valve_ip_address>/<number>\"")
+        """ Display configured automations """
+        if len(self.automations) == 0:
+            print("No automation configured... To create a new one, type \"automate sensor_temperature/" +
+                  "<sensor_ip_address>/valve/<valve_ip_address>/<number>\"")
         for addr_automations in self.automations:
             for automation in self.automations[addr_automations]:
                 print("\nID: " + automation["ID"] +
@@ -248,16 +259,19 @@ class Server:
                       "\n-------------------------------------------------")
 
     def cmd_toggle_rgb_led(self, mote_dest_ip_addr, led_color, led_state):
+        """ Set on/off a led of a lamp mote """
         command = LED_COLORS[led_color] + "/" + MOTE_STATES[led_state]
         self.send_data(mote_dest_ip_addr, command)
         print('Command sent! Led ' + led_color + "/" + led_state)
 
     def cmd_toggle_valve(self, mote_dest_ip_addr, valve_state):
+        """ Set on/off a valve mote """
         command = MOTE_STATES[valve_state]
         self.send_data(mote_dest_ip_addr, command)
         print('Command sent! Valve ' + valve_state)
 
     def cmd_create_automation(self, type, mote_src_ip_addr, mote_dest_ip_addr, value):
+        """ Create a new automation """
         new_automation = {"ID": uuid.uuid4().hex, "type": type,
                           "mote_dest_ip_addr": mote_dest_ip_addr, "value": value}
 
@@ -270,6 +284,7 @@ class Server:
         self.print_new_automation(mote_src_ip_addr, new_automation)
 
     def cmd_remove_automation(self, automation_ID):
+        """ Remove an automation by its ID """
         for addr_automations in self.automations:
             for i in range(len(self.automations[addr_automations])):
                 if self.automations[addr_automations][i]["ID"] == automation_ID:
@@ -278,12 +293,15 @@ class Server:
                     return
 
     def cmd_exit(self):
+        """ Exit the server """
         sys.exit()
 
     def cmd_invalid(self):
+        """ Display an error message when the user types an invalid command """
         print("Invalid command. Try again.")
 
     def print_new_automation(self, mote_src_ip_addr, automation):
+        """ Display new automation """
         print("New automation created!" +
               "\n\t- ID: " + automation["ID"] +
               "\n\t- Type: " + automation["type"] +
@@ -292,6 +310,7 @@ class Server:
               "\n\t- Command: " + automation["value"])
 
     def check_keep_alive(self):
+        """ Verify if a mote is still alive for the server/connected to the server """
         while True:
             time.sleep(KEEP_ALIVE_TIMEOUT)
             for n in list(self.nodes):
@@ -302,6 +321,7 @@ class Server:
                     del self.nodes[n]
 
     def run(self):
+        """ Run the server process """
         global verbose
         verbose = False
         command = None

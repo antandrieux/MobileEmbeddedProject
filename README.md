@@ -2,6 +2,8 @@
 
 ## LINGI2145 - Mobile and embedded computing
 
+The goal of this project is to develop a proof of concept and a communication protocol for a new Internet of Things (IoT) ecosystem. This ecosystem consists of several interconnected devices such as activity sensors, temperature sensors, connected lamps, etc. This ecosystem is controlled by a server which can make commands and automations on it.
+
 #### AUTHORS:
 
 Andrieux Antoine M-SECUC ULB 000443686 - antoine.andrieux@student.uclouvain.be \

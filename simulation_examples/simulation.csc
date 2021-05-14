@@ -7,7 +7,7 @@
   <project EXPORT="discard">[APPS_DIR]/powertracker</project>
   <simulation>
     <title>My simulation</title>
-    <speedlimit>0.1</speedlimit>
+    <speedlimit>10.0</speedlimit>
     <randomseed>123456</randomseed>
     <motedelay_us>1000000</motedelay_us>
     <radiomedium>
@@ -250,7 +250,7 @@
   <plugin>
     org.contikios.cooja.plugins.SimControl
     <width>280</width>
-    <z>2</z>
+    <z>1</z>
     <height>160</height>
     <location_x>400</location_x>
     <location_y>0</location_y>
@@ -265,10 +265,10 @@
       <skin>org.contikios.cooja.plugins.skins.UDGMVisualizerSkin</skin>
       <skin>org.contikios.cooja.plugins.skins.AddressVisualizerSkin</skin>
       <skin>org.contikios.cooja.plugins.skins.MoteTypeVisualizerSkin</skin>
-      <viewport>1.058341507363981 0.0 0.0 1.058341507363981 111.2306484033446 141.19515983715726</viewport>
+      <viewport>1.8288141247249592 0.0 0.0 1.8288141247249592 15.654560440979479 29.40123619860775</viewport>
     </plugin_config>
     <width>400</width>
-    <z>1</z>
+    <z>4</z>
     <height>400</height>
     <location_x>1</location_x>
     <location_y>1</location_y>
@@ -281,7 +281,7 @@
       <coloring />
     </plugin_config>
     <width>1320</width>
-    <z>6</z>
+    <z>2</z>
     <height>454</height>
     <location_x>420</location_x>
     <location_y>321</location_y>
@@ -312,10 +312,10 @@
     <mote_arg>0</mote_arg>
     <plugin_config>
       <port>60001</port>
-      <bound>false</bound>
+      <bound>true</bound>
     </plugin_config>
     <width>362</width>
-    <z>0</z>
+    <z>3</z>
     <height>116</height>
     <location_x>17</location_x>
     <location_y>442</location_y>
@@ -328,7 +328,7 @@
       <scrollpos>0,0</scrollpos>
     </plugin_config>
     <width>350</width>
-    <z>4</z>
+    <z>6</z>
     <height>300</height>
     <location_x>1022</location_x>
     <location_y>9</location_y>
@@ -341,7 +341,7 @@
       <scrollpos>0,0</scrollpos>
     </plugin_config>
     <width>350</width>
-    <z>5</z>
+    <z>0</z>
     <height>300</height>
     <location_x>675</location_x>
     <location_y>6</location_y>
@@ -354,7 +354,7 @@
       <scrollpos>0,0</scrollpos>
     </plugin_config>
     <width>350</width>
-    <z>3</z>
+    <z>5</z>
     <height>300</height>
     <location_x>1369</location_x>
     <location_y>11</location_y>

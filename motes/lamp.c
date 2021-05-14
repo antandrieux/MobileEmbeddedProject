@@ -26,8 +26,8 @@
 #include "net/ipv6/uip-debug.h"
 
 #define START_INTERVAL    (15 * CLOCK_SECOND)
-#define SEND_INTERVAL   (60 * CLOCK_SECOND)
-#define SEND_TIME   (60 % (SEND_INTERVAL))
+#define SEND_INTERVAL   (120 * CLOCK_SECOND)
+#define SEND_TIME   (120 % (SEND_INTERVAL))
 #define MAX_PAYLOAD_LEN   30
 #define KEEP_ALIVE_MSG "3,KEEP_ALIVE" // 3 == LED
 
