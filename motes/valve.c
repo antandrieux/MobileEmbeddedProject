@@ -51,7 +51,7 @@ static void tcpip_handler(void) {
     str = uip_appdata;
     str[uip_datalen()] = '\0';
     
-    char command = str[2];
+    char command = str[0];
     char* command_var = "";
 
     if(command == '1'){
@@ -63,9 +63,10 @@ static void tcpip_handler(void) {
         command_var = "off";
         leds_off(LEDS_RED);
       }
+
+      PRINTF("Valve state: %s \n", command_var);
     }
 
-    PRINTF("Valve state: %s \n", command_var);
 }
 
 /*---------------------------------------------------------------------------*/

@@ -60,7 +60,7 @@ Command:\n\
     <valve_ip_address>/<number> :         change temperature on the temperature valve when the temperature\n\
                                           (given by the temperature sensor) is bellow a given number (default: off)\n\
                                           <number> has to be between 0 and 100.\n\
-                                          (Example: automate sensor_temperature/bbbb::c30c:0:0:3/valve/bbbb::c30c:0:0:6/40)\n\n\
+                                          (Example: automate sensor_temperature/bbbb::c30c:0:0:3/valve/bbbb::c30c:0:0:6/50)\n\n\
   - remove automation/<ID> :              remove an automation by its ID (\"show automations\" to search IDs)\n\n\
 ==============================================================\n"
 MESSAGE_INPUT = "\nType a command (for help, type: help) : "
@@ -111,12 +111,12 @@ class Server:
             # Ignores the message when it has the wrong format
             None
 
-    def send_automation(self, mote_src_ip_addr, mote_dest_ip_addr, type, command):
+    def send_automation(self, mote_src_ip_addr, mote_dest_ip_addr, type, command, command_to_display):
         self.sock.sendto(command.encode(
         ), (mote_dest_ip_addr, UDP_CLIENT_PORT))
         if verbose:
             print("Automation triggered => " + type + " (" + mote_src_ip_addr + " to " + mote_dest_ip_addr + ") => command: " +
-                  command + " (stop verbose? stop)")
+                  command_to_display + " (stop verbose? stop)")
 
     def check_and_automate(self, mote_src_ip_addr, data):
         if mote_src_ip_addr in self.automations:
@@ -129,19 +129,21 @@ class Server:
                     if automation["type"] == "Activity to led":
                         if data == ON:
                             self.send_automation(
-                                mote_src_ip_addr, automation["mote_dest_ip_addr"], automation["type"], automation["value"] + "/on")
+                                mote_src_ip_addr, automation["mote_dest_ip_addr"], automation["type"], LED_COLORS[automation["value"]] + "/" + ON,  automation["value"] + "/on")
                         elif data == OFF:
                             self.send_automation(
-                                mote_src_ip_addr, automation["mote_dest_ip_addr"], automation["type"], automation["value"] + "/off")
+                                mote_src_ip_addr, automation["mote_dest_ip_addr"], automation["type"], LED_COLORS[automation["value"]] + "/" + OFF,  automation["value"] + "/off")
 
                     # if the sensor gets a temperature bellow than the wanted temperature => activate the thermostatic  valve
                     elif automation["type"] == "Temperature to valve":
                         if int(data) <= int(automation["value"]):
-                            command = "valve/on"
+                            command = ON
+                            command_to_display = "on"
                         else:
-                            command = "valve/off"
+                            command = OFF
+                            command_to_display = "off"
                         self.send_automation(
-                            mote_src_ip_addr, automation["mote_dest_ip_addr"], automation["type"], command)
+                            mote_src_ip_addr, automation["mote_dest_ip_addr"], automation["type"], command, command_to_display)
 
     def receive_data(self):
         print("Server listening on port " + str(UDP_SERVER_PORT) + "...\n")
@@ -273,6 +275,7 @@ class Server:
                 if self.automations[addr_automations][i]["ID"] == automation_ID:
                     self.automations[addr_automations].pop(i)
                     print("Automation removed!")
+                    return
 
     def cmd_exit(self):
         sys.exit()
