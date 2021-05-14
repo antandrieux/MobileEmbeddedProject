@@ -29,7 +29,7 @@
 #define SEND_INTERVAL   (60 * CLOCK_SECOND)
 #define SEND_TIME   (60 % (SEND_INTERVAL))
 #define MAX_PAYLOAD_LEN   30
-#define KEEP_ALIVE_MSG "LED,KEEP_ALIVE"
+#define KEEP_ALIVE_MSG "3,KEEP_ALIVE"
 
 static struct uip_udp_conn *client_conn;
 static uip_ipaddr_t server_ipaddr;
@@ -40,57 +40,72 @@ AUTOSTART_PROCESSES(&udp_client_process);
 /*---------------------------------------------------------------------------*/
 static void tcpip_handler(void) {
 
+  /*
+  LED_COLORS = {"red": 1, "green": 2, "blue": 3}
+  MOTE_STATES = {"on": 1, "off": 0}
+
+  // led/bbbb::c30c:0:0:2/red/on 
+  // led/bbbb::c30c:0:0:2/green/on 
+  // led/bbbb::c30c:0:0:2/blue/on 
+  */
+
   char* str;
   
   if(uip_newdata()) {
 
     str = uip_appdata;
-    str[uip_datalen()] = '\0';    
-    char tmp[uip_datalen()];
+    str[uip_datalen()] = '\0';
 
-    int i;
-    for(i = 0; i < uip_datalen(); ++i) {tmp[i] = str[i];}
+    PRINTF("STR: %s \n", str);
 
-    char* led_color;
-    char* command;
-    char* delimiter = "/";
+    char led_color = str[0];
+    char command = str[2];
 
-    led_color = strtok(tmp, delimiter);
-    command = strtok(NULL, delimiter);
+    PRINTF("######### Lamp color: %c \n", led_color);
+    PRINTF("######### Lamp command: %c \n", command);
 
-    PRINTF("Lamp : %s/%s\n", led_color, command);
+    if(led_color == '3') {  // checks if the led is blue
+      PRINTF("Lamp color: blue \n");
 
-    // led/bbbb::c30c:0:0:2/red/on 
-    // led/bbbb::c30c:0:0:2/green/on 
-    // led/bbbb::c30c:0:0:2/blue/on 
-
-
-    if(strcmp(led_color, "blue") == 0) { // check if they are the same
-      if(strcmp(command,"on") == 0){
+      if(command == '1'){
+        PRINTF("Command : on \n");
         leds_on(LEDS_YELLOW);
       } 
+
       else {
+        PRINTF("Command : off \n");
         leds_off(LEDS_YELLOW);
       }
     }
 
-    if(strcmp(led_color, "green") == 0) { 
-      if(strcmp(command,"on") == 0){
+    else if (led_color == '2' ) { // checks if the led is green
+      PRINTF("Lamp color: green \n");
+
+      if(command == '1'){
+        PRINTF("Command : on \n");
         leds_on(LEDS_GREEN);
       } 
+
       else {
+        PRINTF("Command : off \n");
         leds_off(LEDS_GREEN);
       }
     }
 
-    if(strcmp(led_color, "red") == 0) {    
-      if(strcmp(command,"on") == 0){
+    else if (led_color == '1' ) { // checks if the led is red
+      PRINTF("Lamp color: red \n");
+
+      if(command == '1'){
+        PRINTF("Command : on \n");
         leds_on(LEDS_RED);
       } 
+
       else {
+        PRINTF("Command : off \n");
         leds_off(LEDS_RED);
       }
     }
+    
   }
 }
 
