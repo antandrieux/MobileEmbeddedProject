@@ -73,7 +73,7 @@ static void tcpip_handler(void) {
       }
     }
 
-    else if(strcmp(led_color, "green") == 0) { 
+    if(strcmp(led_color, "green") == 0) { 
       if(strcmp(command,"on") == 0){
         leds_toggle(LEDS_GREEN);
       } 
@@ -82,7 +82,7 @@ static void tcpip_handler(void) {
       }
     }
 
-    else if(strcmp(led_color, "red") == 0) {    
+    if(strcmp(led_color, "red") == 0) {    
       if(strcmp(command,"on") == 0){
         leds_toggle(LEDS_RED);
       } 
@@ -98,7 +98,7 @@ static void tcpip_handler(void) {
 static void send_packet(void *ptr) {
   
   char buf[MAX_PAYLOAD_LEN];  
-  sprintf(buf, "Hi server, i'm a lamp");
+  sprintf(buf, "LED_DATA,1");
   uip_udp_packet_sendto(client_conn, buf, strlen(buf), &server_ipaddr, UIP_HTONS(UDP_SERVER_PORT));
 
 }

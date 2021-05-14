@@ -15,6 +15,12 @@ import uuid
 UDP_IP = "bbbb::1"  # = 0.0.0.0 u IPv4
 UDP_SERVER_PORT = 5678
 UDP_CLIENT_PORT = 8765
+TYPES_OF_MOTE = ["TEMPERATURE_DATA", "ACTIVITY_DATA", "LED_DATA", "VALVE_DATA"]
+LED_COLORS = ["red", "green", "blue"]
+MOTE_STATES = ["on", "off"]
+ON = "1"
+OFF = "0"
+BUFFER_SIZE = 1024
 
 REGEX_IPV6 = "(([0-9a-fA-F]{1,4}:){7,7}[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,7}:|([0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,5}(:[0-9a-fA-F]{1,4}){1,2}|([0-9a-fA-F]{1,4}:){1,4}(:[0-9a-fA-F]{1,4}){1,3}|([0-9a-fA-F]{1,4}:){1,3}(:[0-9a-fA-F]{1,4}){1,4}|([0-9a-fA-F]{1,4}:){1,2}(:[0-9a-fA-F]{1,4}){1,5}|[0-9a-fA-F]{1,4}:((:[0-9a-fA-F]{1,4}){1,6})|:((:[0-9a-fA-F]{1,4}){1,7}|:)|fe80:(:[0-9a-fA-F]{0,4}){0,4}%[0-9a-zA-Z]{1,}|::(ffff(:0{1,4}){0,1}:){0,1}((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])|([0-9a-fA-F]{1,4}:){1,4}:((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9]))"
 COMMAND_INSTRUCTIONS = \
@@ -40,7 +46,7 @@ Command:\n\
   - automate sensor_activity/\n\
     <sensor_ip_address>/led/\n\
     <led_ip_address>/<red|green|blue> :   turn on <red|green|blue> led when there is an activity on the sensor (default: off)\n\
-                                          (Example: automate sensor_activity/bbbb::c30c:0:0:1/led/bbbb::c30c:0:0:2/red)\n\
+                                          (Example: automate sensor_activity/bbbb::c30c:0:0:5/led/bbbb::c30c:0:0:2/red)\n\
   - automate sensor_temperature/\n\
     <sensor_ip_address>/valve/\n\
     <valve_ip_address>/<number> :         change temperature on the temperature valve when the temperature\n\
@@ -70,7 +76,7 @@ class Server:
         """ Update the data of the node/mote, and check and operate any automation """
         try:
             [type_of_data, data] = value.split(",")
-            if type_of_data not in ["TEMPERATURE_DATA", "ACTIVITY_DATA"] or not data.isdigit():
+            if type_of_data not in TYPES_OF_MOTE or not data.isdigit():
                 raise Exception("Wrong format message")
 
             if addr in self.nodes:
@@ -81,7 +87,7 @@ class Server:
 
             if verbose:
                 print("Message received     => " + addr + " : " +
-                      data + " (stop verbose? stop)")
+                      type_of_data + "," + data + " (stop verbose? stop)")
 
             self.check_and_automate(addr, data)
 
@@ -103,10 +109,10 @@ class Server:
 
                 # if the sensor detects an activity => activate the led in a chosen color
                 if automation["type"] == "Activity to led":
-                    if data == "1":
+                    if data == ON:
                         self.send_automation(
                             mote_src_ip_addr, automation["mote_dest_ip_addr"], automation["type"], automation["value"] + "/on")
-                    elif data == "0":
+                    elif data == OFF:
                         self.send_automation(
                             mote_src_ip_addr, automation["mote_dest_ip_addr"], automation["type"], automation["value"] + "/off")
 
@@ -123,11 +129,12 @@ class Server:
         print("Server listening on port " + str(UDP_SERVER_PORT) + "...\n")
 
         while True:
-            data, addr = self.sock.recvfrom(1024)  # buffer size is 1024 bytes
+            data, addr = self.sock.recvfrom(
+                BUFFER_SIZE)  # buffer size is 1024 bytes
             data = data.decode("utf-8")
             self.update_node(addr[0], data)
 
-    def extract_fields_from_command(self, command, mote_src_ip_addr, mote_dest_ip_addr, led_color, led_state, valve_state):
+    def extract_fields_from_command(self, command, mote_src_ip_addr, mote_dest_ip_addr, led_color, led_state, valve_state, automation_ID):
         try:
             # Led control
             mote_dest_ip_addr = re.search('led/(.+?)/', command).group(1)
@@ -140,7 +147,7 @@ class Server:
             command = command.replace(led_state, '<on|off>')
             # Inputs validation
             if not re.match(REGEX_IPV6, mote_dest_ip_addr) \
-                    or led_color not in ["red", "green", "blue"] or led_state not in ["on", "off"]:
+                    or led_color not in LED_COLORS or led_state not in MOTE_STATES:
                 command = ""
         except AttributeError:
             None
@@ -157,7 +164,7 @@ class Server:
             # Inputs validation
             if not re.match(REGEX_IPV6, mote_dest_ip_addr) \
                     or (not re.search('automate sensor_temperature/(.+?)/', command)
-                        and valve_state not in ["on", "off"]):
+                        and valve_state not in MOTE_STATES):
                 command = ""
         except AttributeError:
             None
@@ -186,7 +193,12 @@ class Server:
             except AttributeError:
                 None
 
-        return command, mote_src_ip_addr, mote_dest_ip_addr, led_color, led_state, valve_state
+        if 'remove automation/' in command:
+            # Remove automation
+            automation_ID = command.split('remove automation/')[-1]
+            command = command.replace(automation_ID, '<ID>')
+
+        return command, mote_src_ip_addr, mote_dest_ip_addr, led_color, led_state, valve_state, automation_ID
 
     def cmd_print_help(self):
         print(COMMAND_INSTRUCTIONS)
@@ -196,13 +208,16 @@ class Server:
         verbose = bool
 
     def cmd_show_motes(self):
+        if len(self.nodes) == 0:
+            print(
+                "No motes connected... Wait until a message data comes from a mote and try again.")
         for n in self.nodes:
             print(str(n) + " : " + str(self.nodes[n]))
 
     def cmd_show_automations(self):
         for addr_automations in self.automations:
             for automation in self.automations[addr_automations]:
-                print("\n\t- ID: " + automation["ID"] +
+                print("\nID: " + automation["ID"] +
                       "\n\t- Type: " + automation["type"] +
                       "\n\t- Source mote: " + addr_automations +
                       "\n\t- Destination mote: " + automation["mote_dest_ip_addr"] +
@@ -219,7 +234,7 @@ class Server:
         self.send_data(mote_dest_ip_addr, command)
         print('Command sent! Valve ' + command)
 
-    def create_automation(self, type, mote_src_ip_addr, mote_dest_ip_addr, value):
+    def cmd_create_automation(self, type, mote_src_ip_addr, mote_dest_ip_addr, value):
         new_automation = {"ID": uuid.uuid4().hex, "type": type,
                           "mote_dest_ip_addr": mote_dest_ip_addr, "value": value}
 
@@ -231,15 +246,12 @@ class Server:
 
         self.print_new_automation(mote_src_ip_addr, new_automation)
 
-    def cmd_automate_activity_led(self, mote_src_ip_addr, mote_dest_ip_addr, led_color):
-        value = led_color
-        self.create_automation(
-            "Activity to led", mote_src_ip_addr, mote_dest_ip_addr, value)
-
-    def cmd_automate_temperature_valve(self, mote_src_ip_addr, mote_dest_ip_addr, valve_state):
-        value = valve_state  # TO CHANGE!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        self.create_automation("Temperature to valve",
-                               mote_src_ip_addr, mote_dest_ip_addr, value)
+    def cmd_remove_automation(self, automation_ID):
+        for addr_automations in self.automations:
+            for i in range(len(self.automations[addr_automations])):
+                if self.automations[addr_automations][i]["ID"] == automation_ID:
+                    self.automations[addr_automations].pop(i)
+                    print("Automation removed!")
 
     def cmd_exit(self):
         sys.exit()
@@ -249,6 +261,7 @@ class Server:
 
     def print_new_automation(self, mote_src_ip_addr, automation):
         print("New automation created!" +
+              "\n\t- ID: " + automation["ID"] +
               "\n\t- Type: " + automation["type"] +
               "\n\t- Source mote: " + mote_src_ip_addr +
               "\n\t- Destination mote: " + automation["mote_dest_ip_addr"] +
@@ -258,7 +271,7 @@ class Server:
         global verbose
         verbose = False
         command = None
-        mote_dest_ip_addr = mote_src_ip_addr = led_color = led_state = valve_state = None
+        mote_dest_ip_addr = mote_src_ip_addr = led_color = led_state = valve_state = automation_ID = None
 
         self.cmd_print_help()
 
@@ -270,8 +283,8 @@ class Server:
             command = input(MESSAGE_INPUT if command !=
                             "verbose/on" else "\n")
 
-            command, mote_src_ip_addr, mote_dest_ip_addr, led_color, led_state, valve_state = self.extract_fields_from_command(
-                command, mote_src_ip_addr, mote_dest_ip_addr, led_color, led_state, valve_state)
+            command, mote_src_ip_addr, mote_dest_ip_addr, led_color, led_state, valve_state, automation_ID = self.extract_fields_from_command(
+                command, mote_src_ip_addr, mote_dest_ip_addr, led_color, led_state, valve_state, automation_ID)
 
             switcher = {
                 "help": self.cmd_print_help,
@@ -282,8 +295,9 @@ class Server:
                 "show automations": self.cmd_show_automations,
                 "led/<led_ip_address>/<red|green|blue>/<on|off>": partial(self.cmd_toggle_rgb_led, mote_dest_ip_addr, led_color, led_state),
                 "valve/<valve_ip_address>/<value>": partial(self.cmd_toggle_valve, mote_dest_ip_addr, valve_state),
-                "automate sensor_activity/<sensor_ip_address>/led/<led_ip_address>/<red|green|blue>": partial(self.cmd_automate_activity_led, mote_src_ip_addr, mote_dest_ip_addr, led_color),
-                "automate sensor_temperature/<sensor_ip_address>/valve/<valve_ip_address>/<value>": partial(self.cmd_automate_temperature_valve, mote_src_ip_addr, mote_dest_ip_addr, valve_state),
+                "automate sensor_activity/<sensor_ip_address>/led/<led_ip_address>/<red|green|blue>": partial(self.cmd_create_automation, "Activity to led", mote_src_ip_addr, mote_dest_ip_addr, led_color),
+                "automate sensor_temperature/<sensor_ip_address>/valve/<valve_ip_address>/<value>": partial(self.cmd_create_automation, "Temperature to valve", mote_src_ip_addr, mote_dest_ip_addr, valve_state),
+                "remove automation/<ID>": partial(self.cmd_remove_automation, automation_ID),
                 "exit": self.cmd_exit,
             }
             switcher.get(command, self.cmd_invalid)()
