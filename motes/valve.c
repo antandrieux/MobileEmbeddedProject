@@ -41,35 +41,31 @@ AUTOSTART_PROCESSES(&udp_client_process);
 /*---------------------------------------------------------------------------*/
 static void tcpip_handler(void) {
 
+  // valve/bbbb::c30c:0:0:2/on
+  // valve/bbbb::c30c:0:0:2/off
+
   char* str;
   
   if(uip_newdata()) {
 
     str = uip_appdata;
     str[uip_datalen()] = '\0';
-    char tmp[uip_datalen()];
+    
+    char command = str[2];
+    char* command_var = "";
 
-    int i;
-    for(i = 0; i < uip_datalen(); ++i) {tmp[i] = str[i];}
-
-    char* command;
-    char* delimiter = "/";
-
-    strtok(tmp, delimiter);
-    command = strtok(NULL, delimiter);
-
-    PRINTF("Valve state: %s \n", command);
-
-    // valve/bbbb::c30c:0:0:2/on
-      
-    if(strcmp(command, "on") == 0){ // Led red to simulate the valve
+    if(command == '1'){
+        command_var = "on";
         leds_on(LEDS_RED);
-      } 
-      else {
+    }
+    
+    else {
+        command_var = "off";
         leds_off(LEDS_RED);
       }
     }
-  
+
+    PRINTF("Valve state: %s \n", command_var);
 }
 
 /*---------------------------------------------------------------------------*/
