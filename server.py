@@ -85,7 +85,7 @@ class Server:
         try:
             [type_of_data, data] = value.split(",")
             type_of_data = TYPES_OF_MOTE[type_of_data]
-            data = type_of_data
+
             if not ((type_of_data in TYPES_OF_DATA_MOTE and data.isdigit())
                     or (type_of_data in TYPES_OF_RECV_MOTE and data == KEEP_ALIVE_MSG)):
                 raise Exception("Wrong format message")
