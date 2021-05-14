@@ -10,7 +10,6 @@
 #include "net/ipv6/uip.h"
 #include "net/ipv6/uip-ds6.h"
 #include "net/ipv6/uip-udp-packet.h"
-#include "sys/ctimer.h"
 #include "random.h"
 
 #include "dev/tmp102.h"
@@ -26,7 +25,6 @@
 #define DEBUG DEBUG_PRINT
 #include "net/ipv6/uip-debug.h"
 
-#define START_INTERVAL		(15 * CLOCK_SECOND)
 #define SEND_INTERVAL		(60 * CLOCK_SECOND)
 #define SEND_TIME		(random_rand() % (SEND_INTERVAL))
 #define MAX_PAYLOAD_LEN		30
@@ -136,7 +134,6 @@ PROCESS_THREAD(udp_client_process, ev, data)
   while(1) {
     PROCESS_YIELD();
     if(ev == tcpip_event) {
-      printf("RRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRrr \n");
       tcpip_handler();
     }
 

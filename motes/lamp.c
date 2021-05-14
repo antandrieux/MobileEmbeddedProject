@@ -27,8 +27,9 @@
 
 #define START_INTERVAL    (15 * CLOCK_SECOND)
 #define SEND_INTERVAL   (60 * CLOCK_SECOND)
-#define SEND_TIME   (random_rand() % (SEND_INTERVAL))
+#define SEND_TIME   (60 % (SEND_INTERVAL))
 #define MAX_PAYLOAD_LEN   30
+#define KEEP_ALIVE_MSG "LED,KEEP_ALIVE"
 
 static struct uip_udp_conn *client_conn;
 static uip_ipaddr_t server_ipaddr;
@@ -66,7 +67,7 @@ static void tcpip_handler(void) {
 
     if(strcmp(led_color, "blue") == 0) { // check if they are the same
       if(strcmp(command,"on") == 0){
-        leds_toggle(LEDS_YELLOW);
+        leds_on(LEDS_YELLOW);
       } 
       else {
         leds_off(LEDS_YELLOW);
@@ -75,7 +76,7 @@ static void tcpip_handler(void) {
 
     if(strcmp(led_color, "green") == 0) { 
       if(strcmp(command,"on") == 0){
-        leds_toggle(LEDS_GREEN);
+        leds_on(LEDS_GREEN);
       } 
       else {
         leds_off(LEDS_GREEN);
@@ -84,7 +85,7 @@ static void tcpip_handler(void) {
 
     if(strcmp(led_color, "red") == 0) {    
       if(strcmp(command,"on") == 0){
-        leds_toggle(LEDS_RED);
+        leds_on(LEDS_RED);
       } 
       else {
         leds_off(LEDS_RED);
@@ -96,9 +97,8 @@ static void tcpip_handler(void) {
 /*---------------------------------------------------------------------------*/
 
 static void send_packet(void *ptr) {
-  
   char buf[MAX_PAYLOAD_LEN];  
-  sprintf(buf, "LED_DATA,1");
+  sprintf(buf, KEEP_ALIVE_MSG);
   uip_udp_packet_sendto(client_conn, buf, strlen(buf), &server_ipaddr, UIP_HTONS(UDP_SERVER_PORT));
 
 }

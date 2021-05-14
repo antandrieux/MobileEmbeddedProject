@@ -27,8 +27,9 @@
 
 #define START_INTERVAL    (15 * CLOCK_SECOND)
 #define SEND_INTERVAL   (60 * CLOCK_SECOND)
-#define SEND_TIME   (random_rand() % (SEND_INTERVAL))
+#define SEND_TIME   (60 % (SEND_INTERVAL))
 #define MAX_PAYLOAD_LEN   30
+#define KEEP_ALIVE_MSG "VALVE,KEEP_ALIVE"
 
 static struct uip_udp_conn *client_conn;
 static uip_ipaddr_t server_ipaddr;
@@ -46,9 +47,14 @@ static void tcpip_handler(void) {
     str = uip_appdata;
     str[uip_datalen()] = '\0';
     char tmp[uip_datalen()];
+
+    int i;
+    for(i = 0; i < uip_datalen(); ++i) {tmp[i] = str[i];}
+
     char* command;
     char* delimiter = "/";
 
+    strtok(tmp, delimiter);
     command = strtok(NULL, delimiter);
 
     PRINTF("Valve state: %s \n", command);
@@ -56,7 +62,7 @@ static void tcpip_handler(void) {
     // valve/bbbb::c30c:0:0:2/on
       
     if(strcmp(command, "on") == 0){ // Led red to simulate the valve
-        leds_toggle(LEDS_RED);
+        leds_on(LEDS_RED);
       } 
       else {
         leds_off(LEDS_RED);
@@ -70,7 +76,7 @@ static void tcpip_handler(void) {
 static void send_packet(void *ptr) {
   
   char buf[MAX_PAYLOAD_LEN];  
-  sprintf(buf, "VALVE_DATA,1");
+  sprintf(buf, KEEP_ALIVE_MSG);
   uip_udp_packet_sendto(client_conn, buf, strlen(buf), &server_ipaddr, UIP_HTONS(UDP_SERVER_PORT));
 
 }

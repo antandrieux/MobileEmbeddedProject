@@ -10,17 +10,25 @@ from threading import Thread
 import socket
 from functools import partial
 import uuid
+import time
 
 
 UDP_IP = "bbbb::1"  # = 0.0.0.0 u IPv4
 UDP_SERVER_PORT = 5678
 UDP_CLIENT_PORT = 8765
-TYPES_OF_MOTE = ["TEMPERATURE_DATA", "ACTIVITY_DATA", "LED_DATA", "VALVE_DATA"]
-LED_COLORS = ["red", "green", "blue"]
-MOTE_STATES = ["on", "off"]
+
+TYPES_OF_MOTE = {"TEMPERATURE_DATA": 1,
+                 "ACTIVITY_DATA": 2, "LED": 3, "VALVE": 4}
+TYPES_OF_RECV_MOTE = ["LED", "VALVE"]
+TYPES_OF_DATA_MOTE = ["TEMPERATURE_DATA", "ACTIVITY_DATA"]
+LED_COLORS = {"red": 1, "green": 2, "blue": 3}
+MOTE_STATES = {"on": 1, "off": 0}
 ON = "1"
 OFF = "0"
+
 BUFFER_SIZE = 1024
+KEEP_ALIVE_MSG = "KEEP_ALIVE"
+KEEP_ALIVE_TIMEOUT = 240
 
 REGEX_IPV6 = "(([0-9a-fA-F]{1,4}:){7,7}[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,7}:|([0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,5}(:[0-9a-fA-F]{1,4}){1,2}|([0-9a-fA-F]{1,4}:){1,4}(:[0-9a-fA-F]{1,4}){1,3}|([0-9a-fA-F]{1,4}:){1,3}(:[0-9a-fA-F]{1,4}){1,4}|([0-9a-fA-F]{1,4}:){1,2}(:[0-9a-fA-F]{1,4}){1,5}|[0-9a-fA-F]{1,4}:((:[0-9a-fA-F]{1,4}){1,6})|:((:[0-9a-fA-F]{1,4}){1,7}|:)|fe80:(:[0-9a-fA-F]{0,4}){0,4}%[0-9a-zA-Z]{1,}|::(ffff(:0{1,4}){0,1}:){0,1}((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])|([0-9a-fA-F]{1,4}:){1,4}:((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9]))"
 COMMAND_INSTRUCTIONS = \
@@ -46,13 +54,13 @@ Command:\n\
   - automate sensor_activity/\n\
     <sensor_ip_address>/led/\n\
     <led_ip_address>/<red|green|blue> :   turn on <red|green|blue> led when there is an activity on the sensor (default: off)\n\
-                                          (Example: automate sensor_activity/bbbb::c30c:0:0:5/led/bbbb::c30c:0:0:2/red)\n\
+                                          (Example: automate sensor_activity/bbbb::c30c:0:0:2/led/bbbb::c30c:0:0:4/red)\n\
   - automate sensor_temperature/\n\
     <sensor_ip_address>/valve/\n\
     <valve_ip_address>/<number> :         change temperature on the temperature valve when the temperature\n\
                                           (given by the temperature sensor) is bellow a given number (default: off)\n\
                                           <number> has to be between 0 and 100.\n\
-                                          (Example: automate sensor_temperature/bbbb::c30c:0:0:1/valve/bbbb::c30c:0:0:2/40)\n\n\
+                                          (Example: automate sensor_temperature/bbbb::c30c:0:0:3/valve/bbbb::c30c:0:0:6/40)\n\n\
   - remove automation/<ID> :              remove an automation by its ID (\"show automations\" to search IDs)\n\n\
 ==============================================================\n"
 MESSAGE_INPUT = "\nType a command (for help, type: help) : "
@@ -76,20 +84,28 @@ class Server:
         """ Update the data of the node/mote, and check and operate any automation """
         try:
             [type_of_data, data] = value.split(",")
-            if type_of_data not in TYPES_OF_MOTE or not data.isdigit():
+            type_of_data = TYPES_OF_MOTE[type_of_data]
+            data = type_of_data
+            if not ((type_of_data in TYPES_OF_DATA_MOTE and data.isdigit())
+                    or (type_of_data in TYPES_OF_RECV_MOTE and data == KEEP_ALIVE_MSG)):
                 raise Exception("Wrong format message")
 
             if addr in self.nodes:
-                # Replace data with the new received data
-                self.nodes[addr]["data"] = data
+                if data != KEEP_ALIVE_MSG:
+                    # Replace data with the new received data
+                    self.nodes[addr]["data"] = data
             else:   # If node is unknown by the server
                 self.nodes[addr] = {"type": type_of_data, "data": data}
+
+            # refresh last connection status => keep alive
+            self.nodes[addr]["last_connection"] = time.time()
 
             if verbose:
                 print("Message received     => " + addr + " : " +
                       type_of_data + "," + data + " (stop verbose? stop)")
 
-            self.check_and_automate(addr, data)
+            if data != KEEP_ALIVE_MSG:
+                self.check_and_automate(addr, data)
 
         except Exception:
             # Ignores the message when it has the wrong format
@@ -106,24 +122,26 @@ class Server:
         if mote_src_ip_addr in self.automations:
             # run all automations for this source mote
             for automation in self.automations[mote_src_ip_addr]:
+                # Make automation only to the mote still connected to the server (KEEP_ALIVE)
+                if automation["mote_dest_ip_addr"] in self.nodes:
 
-                # if the sensor detects an activity => activate the led in a chosen color
-                if automation["type"] == "Activity to led":
-                    if data == ON:
-                        self.send_automation(
-                            mote_src_ip_addr, automation["mote_dest_ip_addr"], automation["type"], automation["value"] + "/on")
-                    elif data == OFF:
-                        self.send_automation(
-                            mote_src_ip_addr, automation["mote_dest_ip_addr"], automation["type"], automation["value"] + "/off")
+                    # if the sensor detects an activity => activate the led in a chosen color
+                    if automation["type"] == "Activity to led":
+                        if data == ON:
+                            self.send_automation(
+                                mote_src_ip_addr, automation["mote_dest_ip_addr"], automation["type"], automation["value"] + "/on")
+                        elif data == OFF:
+                            self.send_automation(
+                                mote_src_ip_addr, automation["mote_dest_ip_addr"], automation["type"], automation["value"] + "/off")
 
-                # if the sensor gets a temperature bellow than the wanted temperature => activate the thermostatic  valve
-                elif automation["type"] == "Temperature to valve":
-                    if int(data) <= int(automation["value"]):
-                        command = "valve/on"
-                    else:
-                        command = "valve/off"
-                    self.send_automation(
-                        self, mote_src_ip_addr, automation["mote_dest_ip_addr"], automation["type"], command)
+                    # if the sensor gets a temperature bellow than the wanted temperature => activate the thermostatic  valve
+                    elif automation["type"] == "Temperature to valve":
+                        if int(data) <= int(automation["value"]):
+                            command = "valve/on"
+                        else:
+                            command = "valve/off"
+                        self.send_automation(
+                            mote_src_ip_addr, automation["mote_dest_ip_addr"], automation["type"], command)
 
     def receive_data(self):
         print("Server listening on port " + str(UDP_SERVER_PORT) + "...\n")
@@ -212,9 +230,12 @@ class Server:
             print(
                 "No motes connected... Wait until a message data comes from a mote and try again.")
         for n in self.nodes:
-            print(str(n) + " : " + str(self.nodes[n]))
+            print(str(n) + " : " + str(self.nodes[n]) + " (last connection: " + time.strftime(
+                "%b %d %Y %H:%M:%S %Z", time.gmtime(self.nodes[n]["last_connection"])) + ")")
 
     def cmd_show_automations(self):
+        if len(self.nodes) == 0:
+            print("No automation configured... To create a new one, type \"automate sensor_temperature/<sensor_ip_address>/valve/<valve_ip_address>/<number>\"")
         for addr_automations in self.automations:
             for automation in self.automations[addr_automations]:
                 print("\nID: " + automation["ID"] +
@@ -225,14 +246,14 @@ class Server:
                       "\n-------------------------------------------------")
 
     def cmd_toggle_rgb_led(self, mote_dest_ip_addr, led_color, led_state):
-        command = led_color + "/" + led_state
+        command = LED_COLORS[led_color] + "/" + MOTE_STATES[led_state]
         self.send_data(mote_dest_ip_addr, command)
-        print('Command sent! Led ' + command)
+        print('Command sent! Led ' + led_color + "/" + led_state)
 
     def cmd_toggle_valve(self, mote_dest_ip_addr, valve_state):
-        command = "valve/" + valve_state
+        command = MOTE_STATES[valve_state]
         self.send_data(mote_dest_ip_addr, command)
-        print('Command sent! Valve ' + command)
+        print('Command sent! Valve ' + valve_state)
 
     def cmd_create_automation(self, type, mote_src_ip_addr, mote_dest_ip_addr, value):
         new_automation = {"ID": uuid.uuid4().hex, "type": type,
@@ -267,6 +288,16 @@ class Server:
               "\n\t- Destination mote: " + automation["mote_dest_ip_addr"] +
               "\n\t- Command: " + automation["value"])
 
+    def check_keep_alive(self):
+        while True:
+            time.sleep(KEEP_ALIVE_TIMEOUT)
+            for n in list(self.nodes):
+                if (self.nodes[n]["last_connection"] + KEEP_ALIVE_TIMEOUT) < time.time():
+                    if verbose:
+                        print("KEEP_ALIVE process   => No response from " + n +
+                              " anymore. No automation will be triggered for this mote anymore!")
+                    del self.nodes[n]
+
     def run(self):
         global verbose
         verbose = False
@@ -278,6 +309,10 @@ class Server:
         recv_process = Thread(target=self.receive_data)
         recv_process.daemon = True
         recv_process.start()
+
+        keep_alive_process = Thread(target=self.check_keep_alive)
+        keep_alive_process.daemon = True
+        keep_alive_process.start()
 
         while True:
             command = input(MESSAGE_INPUT if command !=
