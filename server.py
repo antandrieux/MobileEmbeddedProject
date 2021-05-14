@@ -17,8 +17,8 @@ UDP_IP = "bbbb::1"  # = 0.0.0.0 u IPv4
 UDP_SERVER_PORT = 5678
 UDP_CLIENT_PORT = 8765
 
-TYPES_OF_MOTE = {"TEMPERATURE_DATA": 1,
-                 "ACTIVITY_DATA": 2, "LED": 3, "VALVE": 4}
+TYPES_OF_MOTE = {"1": "TEMPERATURE_DATA",
+                 "2": "ACTIVITY_DATA", "3": "LED", "4": "VALVE"}
 TYPES_OF_RECV_MOTE = ["LED", "VALVE"]
 TYPES_OF_DATA_MOTE = ["TEMPERATURE_DATA", "ACTIVITY_DATA"]
 LED_COLORS = {"red": 1, "green": 2, "blue": 3}
