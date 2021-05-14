@@ -29,7 +29,8 @@
 #define SEND_INTERVAL   (60 * CLOCK_SECOND)
 #define SEND_TIME   (60 % (SEND_INTERVAL))
 #define MAX_PAYLOAD_LEN   30
-#define KEEP_ALIVE_MSG "VALVE,KEEP_ALIVE"
+#define KEEP_ALIVE_MSG "4,KEEP_ALIVE"  // 4 == VALVE
+
 
 static struct uip_udp_conn *client_conn;
 static uip_ipaddr_t server_ipaddr;

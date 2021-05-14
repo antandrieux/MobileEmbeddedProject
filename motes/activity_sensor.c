@@ -29,6 +29,7 @@
 #define SEND_TIME		(random_rand() % (SEND_INTERVAL))
 #define MAX_PAYLOAD_LEN		30
 #define RANDOM_SENSOR_DATA	1  // 0 if real hardware, 1 if random value
+#define ID_MOTE  "2" // == ACTIVITY_DATA
 
 
 static struct uip_udp_conn *client_conn;
@@ -55,7 +56,7 @@ send_packet(void *ptr)
 {
   char buf[MAX_PAYLOAD_LEN];
     int16_t act;
-    char type[] = "ACTIVITY_DATA";
+    char type[] = ID_MOTE;
 
     if (RANDOM_SENSOR_DATA){
         act = random_rand() % 2;
